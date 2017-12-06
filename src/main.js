@@ -14,10 +14,11 @@ Vue.config.productionTip = false;
   components: { App },
 });*/
 
-var app = new Vue({
-  el: '#app',
+
+var app2 = new Vue({
+  el: '#app2',
   data: {
-    message: 'hello vue'
+    message: '页面加载于 ' + new Date().toLocaleString()
   }
 })
 
