@@ -2,6 +2,8 @@
 
 > A Vue.js project
 
+### [learning vuejs note](./note/first-instance.md)
+
 ## Build Setup
 
 ``` bash

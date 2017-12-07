@@ -16,5 +16,7 @@ export default {
 </script>
 
 <style scoped>
-
+.hello h1 {
+  text-align: center;
+}
 </style>
