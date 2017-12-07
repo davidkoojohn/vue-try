@@ -98,4 +98,4 @@ new Vue({
 
 
 
-
+Next:[模板语法](./syntax.md)
