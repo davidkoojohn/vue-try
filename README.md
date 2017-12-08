@@ -2,7 +2,7 @@
 
 > A Vue.js project
 
-### [learning vuejs note](./note/first-instance.md)
+### [learning vuejs note](./note-catalog.md)
 
 ## Build Setup
 
