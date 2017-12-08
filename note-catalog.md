@@ -9,6 +9,7 @@
 * [列表渲染](./note/list.md)
 * [事件处理](./note/events.md)
 * [表单输入绑定](./note/forms.md)
+* **[组件](./note/components.md)**
 
 
 
