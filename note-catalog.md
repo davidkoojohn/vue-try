@@ -8,6 +8,7 @@
 * [条件渲染](./note/conditional.md)
 * [列表渲染](./note/list.md)
 * [事件处理](./note/events.md)
+* [表单输入绑定](./note/forms.md)
 
 
 
