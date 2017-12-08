@@ -5,7 +5,7 @@
   * [模板语法总结](./note/summary.md)
 * [计算属性和观察者](./note/computed.md)
 * [Class 与 Style 绑定](./note/class-and-style.md)
-
+* [条件渲染](./note/conditional.md)
 
 
 
