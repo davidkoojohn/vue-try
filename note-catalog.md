@@ -4,7 +4,7 @@
 * [模板语法](./note/syntax.md)
   * [模板语法总结](./note/summary.md)
 * [计算属性和观察者](./note/computed.md)
-
+* [Class 与 Style 绑定](./note/class-and-style.md)
 
 
 
