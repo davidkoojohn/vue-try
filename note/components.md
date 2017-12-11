@@ -288,6 +288,150 @@ Vue.component('example', {
 
 所谓非 prop 特性，就是指它可以直接传入组件，而不需要定义相应的 prop。
 
+* 替换/合并现有的特性
+
+## 自定义事件
+
+我们知道，父组件使用 prop 传递数据给子组件。但子组件怎么跟父组件通信呢？这个时候 Vue 的自定义事件系统就派得上用场了。
+
+### 使用 `v-on` 绑定自定义事件
+
+
+> 每个 Vue 实例都实现了事件接口，即：
+* 使用 $on(eventName) 监听事件
+* 使用 $emit(eventName) 触发事件
+
+> Vue 的事件系统与浏览器的 EventTarget API 有所不同。尽管它们的运行起来类似，但是 `$on` 和 `$emit` 并不是`addEventListener` 和 `dispatchEvent` 的别名。
+
+另外，父组件可以在使用子组件的地方直接用 `v-on` 来监听子组件触发的事件。
+
+不能用 `$on` 侦听子组件释放的事件，而必须在模板里直接用 `v-on` 绑定，参见下面的例子。
+
+```
+<div id="counter-event-example">
+  <p>{{ total }}</p>
+  <button-counter v-on:increment="incrementTotal"></button-counter>
+  <button-counter v-on:increment="incrementTotal"></button-counter>
+</div>
+
+// ...
+Vue.component('button-counter', {
+  template: '<button v-on:click="incrementCounter">{{ counter }}</button>',
+  data: function () {
+    return {
+      counter: 0
+    }
+  },
+  methods: {
+    incrementCounter: function () {
+      this.counter += 1
+      this.$emit('increment')
+    }
+  },
+})
+
+// ...
+new Vue({
+  el: '#counter-event-example',
+  data: {
+    total: 0
+  },
+  methods: {
+    incrementTotal: function () {
+      this.total += 1
+    }
+  }
+})
+```
+
+### 给组件绑定原生事件
+
+有时候，你可能想在某个组件的根元素上监听一个原生事件。可以使用 `v-on` 的修饰符 `.native`。例如：
+
+```
+<my-component v-on:click.native="doTheThing"></my-component>
+```
+
+### .sync 修饰符
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
