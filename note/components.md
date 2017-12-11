@@ -354,45 +354,192 @@ new Vue({
 
 ### .sync 修饰符
 
+> 破坏了单向数据流
 
+从 2.3.0 起我们重新引入了 `.sync` 修饰符，但是这次它只是作为一个编译时的语法糖存在。它会被扩展为一个自动更新父组件属性的 `v-on` 监听器。
 
+```
+<comp :foo.sync="bar"></comp>
 
+// 扩展为
 
+<comp :foo="bar" @update:foo="val => bar = val"></comp>
 
+// 当子组件需要更新 foo 的值时，它需要显式地触发一个更新事件：
+this.$emit('update:foo', newValue)
+```
 
+### 使用自定义事件的表单输入组件
 
+自定义事件可以用来创建自定义的表单输入组件，使用 `v-model` 来进行数据双向绑定。要牢记：
 
+```
+<input v-model="something">
 
+// ...这不过是以下示例的语法糖：
+<input
+  v-bind:value="something"
+  v-on:input="something = $event.target.value">
+  
+// ...所以在组件中使用时，它相当于下面的简写：
+<custom-input
+  v-bind:value="something"
+  v-on:input="something = arguments[0]">
+</custom-input>
+```
 
+所以要让组件的 `v-model` 生效，它应该 (从 2.2.0 起是可配置的)：
 
+* 接受一个 `value` prop
+* 在有新的值时触发 `input` 事件并将新值作为参数
 
+```
+//我们来看一个非常简单的货币输入的自定义控件：
+<currency-input v-model="price"></currency-input>
 
+// ...
+Vue.component('currency-input', {
+  template: '\
+    <span>\
+      $\
+      <input\
+        ref="input"\
+        v-bind:value="value"\
+        v-on:input="updateValue($event.target.value)"\
+      >\
+    </span>\
+  ',
+  props: ['value'],
+  methods: {
+    // 不是直接更新值，而是使用此方法来对输入值进行格式化和位数限制
+    updateValue: function (value) {
+      var formattedValue = value
+        // 删除两侧的空格符
+        .trim()
+        // 保留 2 位小数
+        .slice(
+          0,
+          value.indexOf('.') === -1
+            ? value.length
+            : value.indexOf('.') + 3
+        )
+      // 如果值尚不合规，则手动覆盖为合规的值
+      if (formattedValue !== value) {
+        this.$refs.input.value = formattedValue
+      }
+      // 通过 input 事件带出数值
+      this.$emit('input', Number(formattedValue))
+    }
+  }
+})
+```
 
+### 自定义组件的 `v-model`
 
+> 2.2.0 新增
 
+默认情况下，一个组件的 `v-model` 会使用 `value` prop 和 `input` 事件。但是诸如单选框、复选框之类的输入类型可能把 `value` 用作了别的目的。`model` 选项可以避免这样的冲突：
 
+```
+Vue.component('my-checkbox', {
+  model: {
+    prop: 'checked',
+    event: 'change'
+  },
+  props: {
+    checked: Boolean,
+    // 这样就允许拿 `value` 这个 prop 做其它事了
+    value: String
+  },
+  // ...
+})
 
+// ...
+<my-checkbox v-model="foo" value="some value"></my-checkbox>
 
+// ...上述代码等价于：
+<my-checkbox
+  :checked="foo"
+  @change="val => { foo = val }"
+  value="some value">
+</my-checkbox>
+```
 
+### 非父子组件的通信
 
+有时候，非父子关系的两个组件之间也需要通信。在简单的场景下，可以使用一个空的 Vue 实例作为事件总线：
 
+```
+var bus = new Vue()
 
+// 触发组件 A 中的事件
+bus.$emit('id-selected', 1)
 
+// 在组件 B 创建的钩子中监听事件
+bus.$on('id-selected', function (id) {
+  // ...
+})
+```
 
+## 使用插槽分发内容
 
+在使用组件时，我们常常要像这样组合它们：
 
+```
+<app>
+  <app-header></app-header>
+  <app-footer></app-footer>
+</app>
+```
 
+### 编译作用域
 
+在深入内容分发 API 之前，我们先明确内容在哪个作用域里编译。假定模板为：
 
+```
+<child-component>
+  {{ message }}
+</child-component>
+```
 
+`message` 应该绑定到父组件的数据，还是绑定到子组件的数据？答案是父组件。组件作用域简单地说是：
 
+> 父组件模板的内容在父组件作用域内编译；子组件模板的内容在子组件作用域内编译。
 
+一个常见错误是试图在父组件模板内将一个指令绑定到子组件的属性/方法：
 
+```
+<!-- 无效 -->
+<child-component v-show="someChildProperty"></child-component>
+```
 
+假定 `someChildProperty` 是子组件的属性，上例不会如预期那样工作。父组件模板并不感知子组件的状态。
 
+如果要绑定子组件作用域内的指令到一个组件的根节点，你应当在子组件自己的模板里做：
 
+```
+Vue.component('child-component', {
+  // 有效，因为是在正确的作用域内
+  template: '<div v-show="someChildProperty">Child</div>',
+  data: function () {
+    return {
+      someChildProperty: true
+    }
+  }
+})
+```
 
+### [单个插槽](https://cn.vuejs.org/v2/guide/components.html#单个插槽)
 
+除非子组件模板包含至少一个 <slot> 插口，否则父组件的内容将会被丢弃。当子组件模板只有一个没有属性的插槽时，父组件传入的整个内容片段将插入到插槽所在的 DOM 位置，并替换掉插槽标签本身。
+
+### [具名插槽](https://cn.vuejs.org/v2/guide/components.html#具名插槽)
+
+<slot> 元素可以用一个特殊的特性 name 来进一步配置如何分发内容。多个插槽可以有不同的名字。具名插槽将匹配内容片段中有对应 slot 特性的元素。
+
+仍然可以有一个匿名插槽，它是默认插槽，作为找不到匹配的内容片段的备用插槽。如果没有默认插槽，这些找不到匹配的内容片段将被抛弃。
+
+### [作用域插槽](https://cn.vuejs.org/v2/guide/components.html#作用域插槽)
 
 
 
