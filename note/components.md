@@ -541,27 +541,117 @@ Vue.component('child-component', {
 
 ### [作用域插槽](https://cn.vuejs.org/v2/guide/components.html#作用域插槽)
 
+列表组件的模板：
 
+```
+<ul>
+  <slot name="item"
+    v-for="item in items"
+    :text="item.text">
+    <!-- 这里写入备用内容 -->
+  </slot>
+</ul>
+```
 
+解构
 
+> `slot-scope` 的值实际上是一个可以出现在函数签名参数位置的合法的 JavaScript 表达式。这意味着在受支持的环境 (单文件组件或现代浏览器) 中，您还可以在表达式中使用 ES2015 解构：
 
+```
+<child>
+  <span slot-scope="{ text }">{{ text }}</span>
+</child>
+```
 
+## 动态组件
 
+通过使用保留的 `<component>` 元素，动态地绑定到它的 `is` 特性，我们让多个组件可以使用同一个挂载点，并动态切换：
 
+```
+var vm = new Vue({
+  el: '#example',
+  data: {
+    currentView: 'home'
+  },
+  components: {
+    home: { /* ... */ },
+    posts: { /* ... */ },
+    archive: { /* ... */ }
+  }
+})
 
+// ...
+<component v-bind:is="currentView">
+  <!-- 组件在 vm.currentview 变化时改变！ -->
+</component>
 
+// ...也可以直接绑定到组件对象上：
 
+var Home = {
+  template: '<p>Welcome home!</p>'
+}
 
+var vm = new Vue({
+  el: '#example',
+  data: {
+    currentView: Home
+  }
+})
+```
 
+### keep-alive
+    
+如果把切换出去的组件保留在内存中，可以保留它的状态或避免重新渲染。为此可以添加一个 `keep-alive` 指令参数：
 
+```
+<keep-alive>
+  <component :is="currentView">
+    <!-- 非活动组件将被缓存！ -->
+  </component>
+</keep-alive>
+```
 
+## 杂项
 
+### 编写可复用组件
 
+在编写组件时，最好考虑好以后是否要进行复用。一次性组件间有紧密的耦合没关系，但是可复用组件应当定义一个清晰的公开接口，同时也不要对其使用的外层数据作出任何假设。
 
+Vue 组件的 API 来自三部分——prop、事件和插槽：
 
+* Prop 允许外部环境传递数据给组件；
+* 事件允许从组件内触发外部环境的副作用；
+* 插槽允许外部环境将额外的内容组合在组件中。
 
+使用 `v-bind` 和 `v-on` 的简写语法，模板的意图会更清楚且简洁：
 
+```
+<my-component
+  :foo="baz"
+  :bar="qux"
+  @event-a="doThis"
+  @event-b="doThat"
+>
+  <img slot="icon" src="...">
+  <p slot="main-text">Hello!</p>
+</my-component>
+```
 
+### 子组件引用
+
+尽管有 `prop` 和事件，但是有时仍然需要在 JavaScript 中直接访问子组件。为此可以使用 `ref` 为子组件指定一个引用 ID。例如：
+
+```
+<div id="parent">
+  <user-profile ref="profile"></user-profile>
+</div>
+
+var parent = new Vue({ el: '#parent' })
+// 访问子组件实例
+var child = parent.$refs.profile
+```
+
+当 `ref` 和 `v-for` 一起使用时，获取到的引用会是一个数组，包含和循环数据源对应的子组件。
 
 
 
