@@ -653,51 +653,184 @@ var child = parent.$refs.profile
 
 当 `ref` 和 `v-for` 一起使用时，获取到的引用会是一个数组，包含和循环数据源对应的子组件。
 
+### 异步组件
 
+在大型应用中，我们可能需要将应用拆分为多个小模块，按需从服务器下载。为了进一步简化，Vue.js 允许将组件定义为一个工厂函数，异步地解析组件的定义。Vue.js 只在组件需要渲染时触发工厂函数，并且把结果缓存起来，用于后面的再次渲染。例如：
 
+```
+Vue.component('async-example', function (resolve, reject) {
+  setTimeout(function () {
+    // 将组件定义传入 resolve 回调函数
+    resolve({
+      template: '<div>I am async!</div>'
+    })
+  }, 1000)
+})
+```
 
+工厂函数接收一个 `resolve` 回调，在收到从服务器下载的组件定义时调用。也可以调用 `reject(reason)` 指示加载失败。这里使用 `setTimeout` 只是为了演示，实际上如何获取组件完全由你决定。推荐配合 [webpack 的代码分割功能](https://webpack.js.org/guides/code-splitting/) 来使用：
 
+```
+Vue.component('async-webpack-example', function (resolve) {
+  // 这个特殊的 require 语法告诉 webpack
+  // 自动将编译后的代码分割成不同的块，
+  // 这些块将通过 Ajax 请求自动下载。
+  require(['./my-async-component'], resolve)
+})
+```
 
+你可以在工厂函数中返回一个 Promise，所以当使用 webpack 2 + ES2015 的语法时可以这样：
 
+```
+Vue.component(
+  'async-webpack-example',
+  // 该 `import` 函数返回一个 `Promise` 对象。
+  () => import('./my-async-component')
+)
+```
 
+当使用局部注册时，也可以直接提供一个返回 Promise 的函数：
 
+```
+new Vue({
+  // ...
+  components: {
+    'my-component': () => import('./my-async-component')
+  }
+})
+```
 
+### 高级异步组件
 
+自 2.3.0 起，异步组件的工厂函数也可以返回一个如下的对象：
 
+```
+const AsyncComp = () => ({
+  // 需要加载的组件。应当是一个 Promise
+  component: import('./MyComp.vue'),
+  // 加载中应当渲染的组件
+  loading: LoadingComp,
+  // 出错时渲染的组件
+  error: ErrorComp,
+  // 渲染加载中组件前的等待时间。默认：200ms。
+  delay: 200,
+  // 最长等待时间。超出此时间则渲染错误组件。默认：Infinity
+  timeout: 3000
+})
+```
 
+### 组件命名约定
 
+当注册组件 (或者 prop) 时，可以使用 kebab-case (短横线分隔命名)、camelCase (驼峰式命名) 或 PascalCase (单词首字母大写命名)。
 
+```
+// 在组件定义中
+components: {
+  // 使用 kebab-case 注册
+  'kebab-cased-component': { /* ... */ },
+  // 使用 camelCase 注册
+  'camelCasedComponent': { /* ... */ },
+  // 使用 PascalCase 注册
+  'PascalCasedComponent': { /* ... */ }
+}
 
+// 在 HTML 模板中，请使用 kebab-case：
 
+<!-- 在 HTML 模板中始终使用 kebab-case -->
+<kebab-cased-component></kebab-cased-component>
+<camel-cased-component></camel-cased-component>
+<pascal-cased-component></pascal-cased-component>
+```
 
+### 递归组件
 
+组件在它的模板内可以递归地调用自己。不过，只有当它有 `name` 选项时才可以这么做：
 
+```
+name: 'unique-name-of-my-component'
+```
 
+当你利用 `Vue.component` 全局注册了一个组件，全局的 ID 会被自动设置为组件的 `name`。
 
+```
+Vue.component('unique-name-of-my-component', {
+  // ...
+})
+```
 
+如果稍有不慎，递归组件可能导致死循环：
 
+```
+name: 'stack-overflow',
+template: '<div><stack-overflow></stack-overflow></div>'
+```
 
+### 组件间的循环引用
 
+假设你正在构建一个文件目录树，像在 Finder 或资源管理器中。你可能有一个 `tree-folder` 组件：
 
+```
+<p>
+  <span>{{ folder.name }}</span>
+  <tree-folder-contents :children="folder.children"/>
+</p>
+```
 
+以及一个 `tree-folder-contents` 组件：
 
+```
+<ul>
+  <li v-for="child in children">
+    <tree-folder v-if="child.children" :folder="child"/>
+    <span v-else>{{ child.name }}</span>
+  </li>
+</ul>
+```
 
+### 内联模板
 
+如果子组件有 `inline-template` 特性，组件将把它的内容当作它的模板，而不是把它当作分发内容。这让模板编写起来更灵活。
 
+```
+<my-component inline-template>
+  <div>
+    <p>这些将作为组件自身的模板。</p>
+    <p>而非父组件透传进来的内容。</p>
+  </div>
+</my-component>
+```
 
+但是 `inline-template` 让模板的作用域难以理解。使用 `template` 选项在组件内定义模板或者在 `.vue` 文件中使用 `template` 元素才是最佳实践。
 
+### X-Template
 
+另一种定义模板的方式是在 JavaScript 标签里使用 `text/x-template` 类型，并且指定一个 id。例如：
 
+```
+<script type="text/x-template" id="hello-world-template">
+  <p>Hello hello hello</p>
+</script>
 
+// ...
+Vue.component('hello-world', {
+  template: '#hello-world-template'
+})
+```
 
+### 对低开销的静态组件使用 `v-once`
 
+尽管在 Vue 中渲染 HTML 很快，不过当组件中包含大量静态内容时，可以考虑使用 `v-once` 将渲染结果缓存起来，就像这样：
 
-
-
-
-
-
-
+```
+Vue.component('terms-of-service', {
+  template: '\
+    <div v-once>\
+      <h1>Terms of Service</h1>\
+      ...很多静态内容...\
+    </div>\
+  '
+})
+```
 
 
 
